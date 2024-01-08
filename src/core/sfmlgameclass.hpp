@@ -15,11 +15,7 @@ namespace core
 	 * @brief The shared configuration and assets for the custom game
 	 *
 	 */
-	struct MyGameSettings
-	{
-		// TODO: Add your game-specific stuff here
-	};
-
+	struct MyGameSettings;
 	/**
 	 * @brief An abstract game class that works on
 	 * a foreground and a background scene. The object
@@ -227,7 +223,7 @@ namespace core
 		 * @brief The game-specific settings
 		 *
 		 */
-		MyGameSettings GameSettings;
+		MyGameSettings& GameSettings;
 	};
 
 } // namespace core

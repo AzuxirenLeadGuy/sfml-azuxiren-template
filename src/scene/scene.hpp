@@ -4,6 +4,10 @@
 
 using namespace core;
 using ScenePtr = std::unique_ptr<SfmlGameClass::AbstractScene>;
+struct core::MyGameSettings
+{
+	// Define custom game parameters here
+};
 namespace scenes
 {
 	auto GetStarter() -> ScenePtr;
