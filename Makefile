@@ -5,7 +5,7 @@ SFMLVER=SFML-2.6.1
 # The current version of SFML
 SFMLLINK=https://www.sfml-dev.org/files/$(SFMLVER)-linux-gcc-64-bit.tar.gz
 # The compiler to use
-CC=clang++-16
+CC=clang++
 
 
 # The following are set automatically. You are free to set them on your own if you really want to
@@ -50,7 +50,7 @@ $(COMP): $(BEAR)
 	bear --config $(BEAR) -- $(DBG_BUILD_CMD)
 
 $(TIDY):
-	clang-tidy --checks='clang-*,modernize-*,read*,performance-*' --dump-config > $(TIDY)
+	clang-tidy --checks='$(TFLAGS)' --dump-config > $(TIDY)
 
 clean:
 	rm -f ./bin/*.exe $(DLNAME)
@@ -72,7 +72,7 @@ run:$(FINAL_EXE)
 	LD_LIBRARY_PATH=$(LIBDIR) $(FINAL_EXE)
 
 $(DLNAME):
-	mkdir -p $(SFMLROOTDIR) && wget -O $(DLNAME) https://www.sfml-dev.org/files/SFML-2.6.1-linux-gcc-64-bit.tar.gz
+	mkdir -p $(SFMLROOTDIR) && wget -O $(DLNAME) $(SFMLLINK)
 
 $(SFMLFILE): 
 	if [ -d "$(SFMLPATH)" ] && [ -f "$(SFMLFILE)" ]; then \
@@ -80,6 +80,6 @@ $(SFMLFILE):
 	else \
 		echo "Now downloading library" && \
 		mkdir -p $(SFMLROOTDIR) && \
-		wget -O $(DLNAME) https://www.sfml-dev.org/files/SFML-2.6.1-linux-gcc-64-bit.tar.gz && \
+		wget -O $(DLNAME) $(SFMLLINK) && \
 		tar -xf $(DLNAME) -C $(SFMLROOTDIR); \
 	fi
