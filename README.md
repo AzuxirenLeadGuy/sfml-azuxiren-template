@@ -6,9 +6,7 @@ This template is for my personal projects, but feel free to use/change it to you
 ## Pre-requisites
 
 - clang or gcc compiler for C++
-- [SFML libraries](https://www.sfml-dev.org/download/sfml/2.6.1/) must be installed. In linux, it can be installed easily using
-
-    apt install libsfml-dev
+- 
 - Optional tools:
     - clang-tidy : For providing analysis
     - clang-format : For formatting the code

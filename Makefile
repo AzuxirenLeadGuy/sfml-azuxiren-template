@@ -1,3 +1,14 @@
+# Set these two values for downloading the latest sfml library archive
+SFMLROOTDIR=./lib
+# The parent directory for keeping the extracted library. This value is a part of the url itself
+SFMLVER=SFML-2.6.1
+# The current version of SFML
+SFMLLINK=https://www.sfml-dev.org/files/$(SFMLVER)-linux-gcc-64-bit.tar.gz
+# The compiler to use
+CC=clang++-16
+
+
+# The following are set automatically. You are free to set them on your own if you really want to
 BEAR=.bear-config.json
 COMP=compile_commands.json
 TIDY=.clang-tidy
@@ -8,18 +19,22 @@ DEBUG_EXE=./bin/debug.exe
 FINAL_EXE=./bin/program.exe
 SRC=./src/*.c* ./src/*/*.c*
 HPP=./src/*/*.h*
-LIB=-lsfml-system -lsfml-graphics -lsfml-window
-CC=clang++
-DBG_BUILD_CMD=$(CC) $(WFLAGS) -g -o $(DEBUG_EXE) $(SRC) $(LIB)
+SFMLPATH=$(SFMLROOTDIR)/$(SFMLVER)
+SFMLFILE=$(SFMLPATH)/include/SFML/Config.hpp
+LIBDIR=$(SFMLPATH)/lib
+INCDIR=$(SFMLPATH)/include
+LIBFLAGS=-I$(INCDIR) -L$(LIBDIR) -lsfml-system -lsfml-graphics -lsfml-window
+DLNAME=$(SFMLROOTDIR)/sfml-lib.tar.gz
+DBG_BUILD_CMD=$(CC) $(WFLAGS) -g -o $(DEBUG_EXE) $(SRC) $(LIBFLAGS)
 
 .PHONY:clean format build debug-build run
 
 WFLAGS=-Wall -Wextra -pedantic -std=c++20
 
-$(FINAL_EXE):$(SRC) $(HPP) $(BNF)
-	$(CC) $(WFLAGS) -O3 -o $(FINAL_EXE) $(SRC) $(LIB)
+$(FINAL_EXE):$(SRC) $(HPP) $(BNF) $(SFMLFILE)
+	$(CC) $(WFLAGS) -O3 -o $(FINAL_EXE) $(SRC) $(LIBFLAGS)
 
-$(DEBUG_EXE):$(SRC) $(HPP) $(BNF)
+$(DEBUG_EXE):$(SRC) $(HPP) $(BNF) $(SFMLFILE)
 	$(DBG_BUILD_CMD)
 
 $(BNF):
@@ -38,7 +53,7 @@ $(TIDY):
 	clang-tidy --checks='clang-*,modernize-*,read*,performance-*' --dump-config > $(TIDY)
 
 clean:
-	rm -f ./bin/*.exe
+	rm -f ./bin/*.exe $(DLNAME)
 
 format: $(FORM) $(SRC) $(HPP)
 	clang-format -i $(SRC) $(HPP)
@@ -54,4 +69,17 @@ debug:$(DEBUG_EXE)
 build:$(FINAL_EXE)
 
 run:$(FINAL_EXE)
-	$(FINAL_EXE)
+	LD_LIBRARY_PATH=$(LIBDIR) $(FINAL_EXE)
+
+$(DLNAME):
+	mkdir -p $(SFMLROOTDIR) && wget -O $(DLNAME) https://www.sfml-dev.org/files/SFML-2.6.1-linux-gcc-64-bit.tar.gz
+
+$(SFMLFILE): 
+	if [ -d "$(SFMLPATH)" ] && [ -f "$(SFMLFILE)" ]; then \
+		echo "Library linked successfully."; \
+	else \
+		echo "Now downloading library" && \
+		mkdir -p $(SFMLROOTDIR) && \
+		wget -O $(DLNAME) https://www.sfml-dev.org/files/SFML-2.6.1-linux-gcc-64-bit.tar.gz && \
+		tar -xf $(DLNAME) -C $(SFMLROOTDIR); \
+	fi

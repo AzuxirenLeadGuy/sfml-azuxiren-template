@@ -4,3 +4,4 @@ bin/
 .clang*
 .bear*
 .vscode/settings.json
+lib/
