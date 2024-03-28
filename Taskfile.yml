@@ -27,11 +27,7 @@ vars:
   FLAGS_L: -I{{.SFML_INC}} {{.SFML_LIB}}/libsfml-*[!-d].so -lFLAC -Wl,-rpath={{.SFML_LIB}}
   FLAGS_T: --checks=modern*,performance*,read*
 
-  CMD_DBG: clang++ {{.FLAGS_W}} -g -o {{.DEBUG_EXE}} {{.FILES_CPP}} {{.FILES_SRC}} {{.FLAGS_L}}
-
   NOTIMP: "Not Implemented yet!"
-
-  BCONFIG: '{"compilation": null,"output": {"content":{"include_only_existing_source": true,"duplicate_filter_fields": "file"},"format": {"command_as_array": true,"drop_output_field": false}}}'
 
 tasks:
   # Download the SFML library
@@ -44,23 +40,6 @@ tasks:
     status:
       - test -d {{.SFML_PATH}}
   
-  # Prepare the .bear-config.json file
-  setup-bear-config:
-    cmds:
-      - cmd: echo '{{.BCONFIG}}' > {{.FILE_BCON}}
-        platforms: [linux/amd64]
-    status:
-      - test -f {{.FILE_BCON}}
-  
-  # Prepare the file `compile_commands.json`
-  setup-cc-json:
-    cmds:
-      - cmd: bear --config {{.FILE_BCON}} -- {{.CMD_DBG}}
-        platforms: [linux/amd64]
-    deps: [setup-bear-config, setup-bin-dir]
-    status:
-      - test -f {{.FILE_COMP}}
-  
   # Prepare the file `.clang-format`
   setup-clang-format:
     cmds:
@@ -69,18 +48,11 @@ tasks:
     status:
       - test -f {{.FILE_FORM}}
   
-  setup-check-flac:
-    cmds:
-      - cmd: (ldconfig -p | grep libFLAC.so.12) || (echo 'You need to install libFLAC.so.12' && test)
-        platforms: [linux/amd64]
-      - cmd: echo {{.NOTIMP}} && test
-  
   # Prepare the file `.clang-tidy`
   setup-clang-tidy:
     cmds:
-      - task: setup-check-flac
       - task: setup-download-lib
-      - task: setup-cc-json
+      - task: build
       - cmd: clang-tidy --checks='{{.FLAGS_T}}' --dump-config > {{.FILE_TIDY}}
     status:
       - test -f  {{.FILE_TIDY}}
@@ -99,7 +71,9 @@ tasks:
   # Builds a debug executable file for the game
   debug:
     cmds:
-      - cmd: '{{.CMD_DBG}}'
+      - cmd: clang++ -MJ {{.FILE_COMP}} {{.FLAGS_W}} -g -o {{.DEBUG_EXE}} {{.FILES_CPP}} {{.FILES_SRC}} {{.FLAGS_L}}
+      - cmd: sed -i '1i[' ./{{FILE_COMP}}
+      - cmd: echo "]" >> ./{{FILE_COMP}}
     deps: [setup-download-lib, setup-bin-dir]
     sources:
       - '{{.FILES_SRC}}'
@@ -112,7 +86,9 @@ tasks:
   # Prepare the build file for the game 
   build:
     cmds:
-      - cmd: clang++ {{.FLAGS_W}} -O3 -o {{.FINAL_EXE}} {{.FILES_CPP}} {{.FILES_SRC}} {{.FLAGS_L}}
+      - cmd: clang++ -MJ {{.FILE_COMP}} {{.FLAGS_W}} -O3 -o {{.FINAL_EXE}} {{.FILES_CPP}} {{.FILES_SRC}} {{.FLAGS_L}}
+      - cmd: sed -i '1i[' ./{{.FILE_COMP}}
+      - cmd: echo "]" >> ./{{.FILE_COMP}}
     deps: [setup-download-lib, setup-bin-dir]
     sources:
       - '{{.FILES_SRC}}'
