@@ -1,0 +1,147 @@
+version: 3
+
+vars:
+  SFML_VER: SFML-2.6.1 # The sfml version, and the extracted folder name
+  SFML_ROOT: ./lib # The root directory to extract the file
+
+  FILE_BCON: .bear-config.json
+  FILE_COMP: compile_commands.json
+  FILE_TIDY: .clang-tidy
+  FILE_FORM: .clang-format
+  FILE_DL: "{{.SFML_ROOT}}/sfml-lib.tar.gz"
+  FILES_SRC: ./src/*/*.c*
+  FILES_CPP: ./src/*.c*
+  FILES_HPP: ./src/*/*.h*
+  
+  DIR_BIN: ./bin
+
+  DEBUG_EXE: "{{.DIR_BIN}}/debug.exe"
+  FINAL_EXE: "{{.DIR_BIN}}/program.exe"
+  
+
+  SFML_PATH: "{{.SFML_ROOT}}/{{.SFML_VER}}"
+  SFML_LIB: "{{.SFML_PATH}}/lib"
+  SFML_INC: "{{.SFML_PATH}}/include"
+
+  FLAGS_W: -Wall -Wextra -pedantic -std=c++20
+  FLAGS_L: -I{{.SFML_INC}} {{.SFML_LIB}}/libsfml-*[!-d].so -lFLAC -Wl,-rpath={{.SFML_LIB}}
+  FLAGS_T: --checks=modern*,performance*,read*
+
+  CMD_DBG: clang++ {{.FLAGS_W}} -g -o {{.DEBUG_EXE}} {{.FILES_CPP}} {{.FILES_SRC}} {{.FLAGS_L}}
+
+  NOTIMP: "Not Implemented yet!"
+
+  BCONFIG: '{"compilation": null,"output": {"content":{"include_only_existing_source": true,"duplicate_filter_fields": "file"},"format": {"command_as_array": true,"drop_output_field": false}}}'
+
+tasks:
+  # Download the SFML library
+  setup-download-lib:
+    env:
+      LINUXAMD: https://www.sfml-dev.org/files/{{.SFML_VER}}-linux-gcc-64-bit.tar.gz
+    cmds:
+      - cmd: echo "Now downloading library" && mkdir -p {{.SFML_ROOT}} && wget -O {{.FILE_DL}} $LINUXAMD && tar -xf {{.FILE_DL}} -C {{.SFML_ROOT}};
+        platforms: [linux/amd64]
+    status:
+      - test -d {{.SFML_PATH}}
+  
+  # Prepare the .bear-config.json file
+  setup-bear-config:
+    cmds:
+      - cmd: echo '{{.BCONFIG}}' > {{.FILE_BCON}}
+        platforms: [linux/amd64]
+    status:
+      - test -f {{.FILE_BCON}}
+  
+  # Prepare the file `compile_commands.json`
+  setup-cc-json:
+    cmds:
+      - cmd: bear --config {{.FILE_BCON}} -- {{.CMD_DBG}}
+        platforms: [linux/amd64]
+    deps: [setup-bear-config, setup-bin-dir]
+    status:
+      - test -f {{.FILE_COMP}}
+  
+  # Prepare the file `.clang-format`
+  setup-clang-format:
+    cmds:
+      - cmd: clang-format --dump-config > {{.FILE_FORM}}
+        platforms: [linux/amd64]
+    status:
+      - test -f {{.FILE_FORM}}
+  
+  setup-check-flac:
+    cmds:
+      - cmd: (ldconfig -p | grep libFLAC.so.12) || (echo 'You need to install libFLAC.so.12' && test)
+        platforms: [linux/amd64]
+      - cmd: echo {{.NOTIMP}} && test
+  
+  # Prepare the file `.clang-tidy`
+  setup-clang-tidy:
+    cmds:
+      - task: setup-check-flac
+      - task: setup-download-lib
+      - task: setup-cc-json
+      - cmd: clang-tidy --checks='{{.FLAGS_T}}' --dump-config > {{.FILE_TIDY}}
+    status:
+      - test -f  {{.FILE_TIDY}}
+  
+  # Creates the bin folder
+  setup-bin-dir:
+    cmds:
+      - cmd: mkdir -p {{.DIR_BIN}}
+    status:
+      - test -d {{.DIR_BIN}}
+  
+  # Prepares all clang config files
+  setup:
+    deps: [setup-clang-tidy, setup-clang-format]
+  
+  # Builds a debug executable file for the game
+  debug:
+    cmds:
+      - cmd: '{{.CMD_DBG}}'
+    deps: [setup-download-lib, setup-bin-dir]
+    sources:
+      - '{{.FILES_SRC}}'
+      - '{{.FILES_CPP}}'
+      - '{{.FILES_HPP}}'
+    method: checksum
+    status:
+      - test -f {{.DEBUG_EXE}}
+  
+  # Prepare the build file for the game 
+  build:
+    cmds:
+      - cmd: clang++ {{.FLAGS_W}} -O3 -o {{.FINAL_EXE}} {{.FILES_CPP}} {{.FILES_SRC}} {{.FLAGS_L}}
+    deps: [setup-download-lib, setup-bin-dir]
+    sources:
+      - '{{.FILES_SRC}}'
+      - '{{.FILES_CPP}}'
+      - '{{.FILES_HPP}}'
+    method: checksum
+    status:
+      - test -f {{.FINAL_EXE}}
+  
+  # Runs the game executable
+  run:
+    cmds:
+      - cmd: '{{.FINAL_EXE}}'
+    deps: [build]
+  
+  # Deletes the config files
+  clean:
+    cmds:
+      - cmd: rm -f {{.DIR_BIN}}/*.exe {{.FILE_BCON}} {{.FILE_COMP}} {{.FILE_FORM}} {{.FILE_DL}}
+        platforms: [linux/amd64]
+      - cmd: echo {{.NOTIMP}} && test
+        platforms: [windows, darwin]
+  
+  # Runs clang-tidy for the project
+  tidy:
+    cmds:
+      - cmd: clang-tidy --config-file={{.FILE_TIDY}} {{.FILES_CPP}} {{.FILES_CPP}} {{.FILES_SRC}} {{.FILES_HPP}}
+  
+  # Runs clang-format for the project
+  format:
+    cmds:
+      - cmd: clang-format -i {{.FILES_SRC}} {{.FILES_CPP}} {{.FILES_HPP}}

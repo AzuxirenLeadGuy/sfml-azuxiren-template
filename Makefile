@@ -23,7 +23,7 @@ SFMLPATH=$(SFMLROOTDIR)/$(SFMLVER)
 SFMLFILE=$(SFMLPATH)/include/SFML/Config.hpp
 LIBDIR=$(SFMLPATH)/lib
 INCDIR=$(SFMLPATH)/include
-LIBFLAGS=-I$(INCDIR) -L$(LIBDIR) -lsfml-system -lsfml-graphics -lsfml-window
+LIBFLAGS=-I$(INCDIR) -L$(LIBDIR) -lsfml-system -lsfml-graphics -lsfml-window -lsfml-audio
 DLNAME=$(SFMLROOTDIR)/sfml-lib.tar.gz
 DBG_BUILD_CMD=$(CC) $(WFLAGS) -g -o $(DEBUG_EXE) $(SRC) $(LIBFLAGS)
 

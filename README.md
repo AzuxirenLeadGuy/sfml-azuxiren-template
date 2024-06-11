@@ -6,14 +6,14 @@ This template is for my personal projects, but feel free to use/change it to you
 ## Pre-requisites
 
 - clang or gcc compiler for C++
-- 
+- Build tools (Either [GNU Make](https://www.gnu.org/software/make/) or [Taskfile](https://taskfile.dev))
 - Optional tools:
     - clang-tidy : For providing analysis
     - clang-format : For formatting the code
     - [bear](https://github.com/rizsotto/Bear): For generation of [compile_commands.json] that will be used by your IDE as well as the above two tools to work properly.
 
 
-Please go through the Makefile to understand how each tool work for each other. The build command `make build` and `make debug` does not use any of the mentioned optional tools. If the SFML library is loaded at a non-system path rather than being installed system-wide, you will also need to edit the makefile accordingly.
+Please go through the Makefile to understand how each tool work for each other. The build commands `build` and `debug` (in Makefile as well as the taskfile) compiles the program, without using any of the mentioned optional tools. 
 
 
 ## Purpose

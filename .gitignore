@@ -5,3 +5,4 @@ bin/
 .bear*
 .vscode/settings.json
 lib/
+.task/
